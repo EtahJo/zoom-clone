@@ -1,11 +1,11 @@
 import React, {useState,useEffect} from 'react';
-import {View,Text,StyleSheet,TextInput, Alert, SafeAreaView, TouchableOpacity} from "react-native";
+import {View,Modal,Text,StyleSheet,TextInput, Alert, SafeAreaView, TouchableOpacity} from "react-native";
 import StartMeeting from '../components/StartMeeting';
 import {io} from "socket.io-client";
 import {Camera} from "expo-camera";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import { backgroundColor } from 'react-native/Libraries/Components/View/ReactNativeStyleAttributes';
-
+import Chat from "../components/Chat";
 
 let socket;
 const menuIcons=[
@@ -39,6 +39,7 @@ function MeetingRoom() {
     const[roomId,setRoomId] = useState();
     const[activeUsers,setActiveUsers] = useState(["Etah","Joso","Arrah"]);
     const[startCamera,setStartCamera] = useState(false);
+    const[modalVisible,setModalVisible] = useState(false);
 
     const __startCamera=async()=>{
         const {status} = await Camera.requestCameraPermissionsAsync();
@@ -56,7 +57,7 @@ function MeetingRoom() {
     }
 
     useEffect(()=>{
-            socket= io("http://c2d4-129-0-205-56.ngrok.io");
+            socket= io("http://63a5-129-0-205-129.ngrok.io");
             socket.on('connect',()=>console.log("connected"))
             socket.on("all-users", users=>{
                 console.log("Active Users");
@@ -68,16 +69,47 @@ function MeetingRoom() {
     return (
         <View style={styles.container}>
            {startCamera?(
-               <SafeAreaView style={{flex:1}}>
+               <SafeAreaView style={{flex:1, padding:10}}>
+                   <Modal
+                   animationType='slide'
+                   transparent={false}
+                   presentationStyle={'fullScreen'}
+                   visible={modalVisible}
+                   onRequestClose={()=>{
+                       setModalVisible(!modalVisible)
+                   }}
+                   >
+                      <Chat
+                        modalVisible={modalVisible}
+                        setModalVisible={setModalVisible}
+                      />
+                   </Modal>
+
+
+
+
+                   <View style={styles.activeUsersContainer}>
                    <View style={styles.cameraContainer}>
                    <Camera
                         type={"front"}
-                        style={{width:"100%", height:600}}
+                        style={{
+                        width:activeUsers.length <=1 ?"100%":180,
+                         height:activeUsers.length <=1 ?600:200}}
                         >
                     </Camera>
+                    {activeUsers.filter(user=>(user.userName != name)).map((user,index)=>
+                        <View
+                        key={index} 
+                         style={styles.activeUserContainer}>
+                            <Text style={{color:"white"}}>{user.userName}</Text>
+                        </View>
+                    )}
                    </View>
+                   </View>
+                  
                
                <View style={styles.menu}>
+                   
                {menuIcons.map((icon,index)=>(
                   
                    <TouchableOpacity 
@@ -94,6 +126,17 @@ function MeetingRoom() {
                    </TouchableOpacity>
            
                ))}
+                <TouchableOpacity 
+                onPress={()=>setModalVisible(true)}
+                   style={styles.tile}>
+                       <FontAwesome
+                       name={"comment"}
+                       size={24}
+                       color={"#efefef"}
+                       />
+                       <Text style={styles.textTile}>Chat</Text>
+                   </TouchableOpacity>
+           
              </View>
                </SafeAreaView>
            ) : (
@@ -135,9 +178,26 @@ const styles = StyleSheet.create({
          alignItems:"center",
      },
      cameraContainer:{
-         flex:1,
+         flexDirection:"row",
+         flexWrap:"wrap",
          backgroundColor:"black",
-         justifyContent:"center"
-     }
+         justifyContent:"center",
+         
+     },
+     activeUserContainer:{
+       borderColor:"gray",
+       borderWidth:1,
+       width: 180,
+       height: 200,
+       justifyContent:"center",
+       alignItems:"center",
+     },
+     activeUsersContainer:{
+        flex: 1,
+        justifyContent:"center",
+        backgroundColor:"black"
+        //alignItems:"center",
+       
+     },
      
 })
